@@ -72,35 +72,40 @@ document.querySelectorAll(".quote-dot").forEach((dot, index) => dot.addEventList
   dot.classList.add("active");
 }));
 
-const makeWebhookUrl = "https://hook.eu1.make.com/8lu2vpt4ljvipfttvactphvu6ocfky0c";
+const makeWebhookUrl = "https://hook.eu1.make.com/cxn6842ajct8xeqd9mf7s0oi88oer87n";
+let bookingSubmissionInProgress = false;
 document.querySelector("#demo-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (bookingSubmissionInProgress) return;
+  bookingSubmissionInProgress = true;
   const form = event.currentTarget;
   const values = new FormData(form);
   const submitButton = form.querySelector('button[type="submit"]');
   const errorMessage = document.querySelector("#booking-error");
-  const message = [
-    "School visit request",
-    `Child's age: ${values.get("age")}`,
-    `Preferred date: ${values.get("date")}`,
-    `Convenient timing: ${values.get("time")}`,
-  ].join("\n");
   submitButton.disabled = true;
   submitButton.setAttribute("aria-busy", "true");
   errorMessage.hidden = true;
   try {
+    if (values.get("website")) return;
+    const body = new URLSearchParams({
+      parent_name: values.get("name"),
+      parent_email: values.get("email"),
+      phone_number: values.get("phone"),
+      child_age: values.get("age"),
+      preferred_date: values.get("date"),
+      preferred_time: values.get("time"),
+      website: values.get("website"),
+    });
     const response = await fetch(makeWebhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: values.get("name"),
-        email: values.get("email"),
-        phone: values.get("phone"),
-        message,
-      }),
+      body,
     });
     if (!response.ok) {
       throw new Error(`Make webhook returned ${response.status}`);
+    }
+    const result = await response.json();
+    if (result.accepted !== true) {
+      throw new Error("Make webhook did not accept the request");
     }
     document.querySelector("#booking-fields").hidden = true;
     document.querySelector("#booking-success").hidden = false;
@@ -108,6 +113,7 @@ document.querySelector("#demo-form").addEventListener("submit", async (event) =>
     console.error("Booking request failed:", error);
     errorMessage.hidden = false;
   } finally {
+    bookingSubmissionInProgress = false;
     submitButton.disabled = false;
     submitButton.removeAttribute("aria-busy");
   }
