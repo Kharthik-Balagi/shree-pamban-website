@@ -103,10 +103,6 @@ document.querySelector("#demo-form").addEventListener("submit", async (event) =>
     if (!response.ok) {
       throw new Error(`Make webhook returned ${response.status}`);
     }
-    const result = await response.json();
-    if (result.accepted !== true) {
-      throw new Error("Make webhook did not accept the request");
-    }
     document.querySelector("#booking-fields").hidden = true;
     document.querySelector("#booking-success").hidden = false;
   } catch (error) {
