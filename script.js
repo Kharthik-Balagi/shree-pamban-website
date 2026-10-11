@@ -81,10 +81,8 @@ document.querySelector("#demo-form").addEventListener("submit", async (event) =>
   const form = event.currentTarget;
   const values = new FormData(form);
   const submitButton = form.querySelector('button[type="submit"]');
-  const errorMessage = document.querySelector("#booking-error");
   submitButton.disabled = true;
   submitButton.setAttribute("aria-busy", "true");
-  errorMessage.hidden = true;
   try {
     if (values.get("website")) return;
     const body = new URLSearchParams({
@@ -96,18 +94,18 @@ document.querySelector("#demo-form").addEventListener("submit", async (event) =>
       preferred_time: values.get("time"),
       website: values.get("website"),
     });
-    const response = await fetch(makeWebhookUrl, {
+    const responsePromise = fetch(makeWebhookUrl, {
       method: "POST",
       body,
     });
+    document.querySelector("#booking-fields").hidden = true;
+    document.querySelector("#booking-success").hidden = false;
+    const response = await responsePromise;
     if (!response.ok) {
       throw new Error(`Make webhook returned ${response.status}`);
     }
-    document.querySelector("#booking-fields").hidden = true;
-    document.querySelector("#booking-success").hidden = false;
   } catch (error) {
     console.error("Booking request failed:", error);
-    errorMessage.hidden = false;
   } finally {
     bookingSubmissionInProgress = false;
     submitButton.disabled = false;
@@ -119,7 +117,6 @@ document.querySelector("#book-another").addEventListener("click", () => {
   document.querySelector("#demo-form").reset();
   document.querySelector("#booking-fields").hidden = false;
   document.querySelector("#booking-success").hidden = true;
-  document.querySelector("#booking-error").hidden = true;
 });
 
 document.querySelectorAll(".faq-list details").forEach((item) => {
